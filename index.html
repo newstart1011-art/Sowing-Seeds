@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Sowing Seeds</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sowing Seeds</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .fade-in { 
+            animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            will-change: transform, opacity;
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(8px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        /* Organic wind sway animations */
+        @keyframes organicSwayLeft {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-1.5deg) skewX(-0.5deg); }
+        }
+        @keyframes organicSwayRight {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(1.5deg) skewX(0.5deg); }
+        }
+        @keyframes leafFlutter {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.02) rotate(1deg); }
+        }
+        .sway-left { transform-origin: bottom center; animation: organicSwayLeft 7s ease-in-out infinite; }
+        .sway-right { transform-origin: bottom center; animation: organicSwayRight 6s ease-in-out infinite; }
+        .flutter { transform-origin: center; animation: leafFlutter 4.5s ease-in-out infinite; }
+        
+        .mist-blur-fade { filter: blur(16px); opacity: 0; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .barrier-line { transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1); }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+        
+        /* Smooth accordion utilities */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .accordion-open {
+            max-height: 250px;
+        }
+        
+        html, body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800 font-sans min-h-screen flex items-center justify-center p-3 sm:p-6 antialiased">
+
+    <div id="app-card" class="bg-white rounded-2xl shadow-xl max-w-4xl w-full border border-stone-200/60 transition-all duration-300 min-h-[85vh] sm:min-h-[620px] flex flex-col overflow-hidden text-left relative">
+        
+        <div id="system-alert-modal" class="hidden absolute inset-0 bg-stone-900/40 backdrop-blur-sm z-50 items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-stone-200/80 text-center space-y-3">
+                <div class="text-amber-600 text-2xl">⚠️</div>
+                <p id="system-alert-text" class="text-xs font-medium text-stone-700 leading-relaxed"></p>
+                <button onclick="closeSystemAlert()" class="bg-stone-900 hover:bg-stone-800 text-white text-[11px] font-bold uppercase tracking-wide px-4 py-2 rounded-xl transition cursor-pointer">Acknowledge</button>
+            </div>
+        </div>
+
+        <div id="save-card-overlay" class="hidden absolute inset-0 bg-stone-900/90 backdrop-blur-md z-50 flex-col items-center justify-center p-4 fade-in text-center space-y-4">
+            <div class="text-white space-y-1 max-w-xs">
+                <h3 class="font-serif text-lg font-medium">Your Intention Card is Ready</h3>
+                <p class="text-[11px] text-stone-300 leading-normal">Tap and hold the card to save it to your camera roll, or right-click to download it to your desktop.</p>
+            </div>
+
+            <div class="bg-stone-50 border border-stone-200/60 rounded-2xl p-4 w-[260px] aspect-[4/5] flex flex-col justify-between items-center shadow-2xl">
+                <div class="w-full flex-grow flex items-end justify-center pb-2 overflow-hidden max-h-[65%]">
+                    <img id="save-card-plant-display" src="" alt="Selected Plant" class="max-w-[95%] max-h-[95%] object-contain drop-shadow-md">
+                </div>
+                <div class="w-full bg-white border border-stone-200 rounded-b-xl rounded-t shadow-sm min-h-[90px] p-2.5 flex flex-col items-center justify-center text-center">
+                    <h4 id="save-card-pot-name" class="font-serif font-bold text-stone-800 text-[11px] tracking-wider uppercase border-b border-stone-100 pb-1 mb-1 w-full truncate"></h4>
+                    <p id="save-card-pot-affirmation" class="font-sans font-semibold italic text-emerald-800 leading-tight text-base px-1 w-full max-h-[56px] overflow-hidden"></p>
+                </div>
+            </div>
+
+            <button onclick="closeSaveCardOverlay()" class="bg-white hover:bg-stone-100 text-stone-900 text-xs font-bold uppercase tracking-wide px-6 py-2.5 rounded-xl shadow transition cursor-pointer">Return To Dashboard</button>
+        </div>
+
+        <div id="reset-modal" class="hidden absolute inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-stone-200/80 space-y-4">
+                <h3 class="font-serif text-lg font-medium text-stone-900">Start a New Plant?</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">This action will clear your current garden canvas details from the storage memory cache and bring you back to the introduction page stage.</p>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button onclick="closeResetModal()" class="text-xs font-bold uppercase text-stone-400 hover:text-stone-700 px-3 py-2 transition cursor-pointer">Cancel</button>
+                    <button onclick="confirmResetApp()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase px-4 py-2 rounded-xl shadow transition cursor-pointer">Yes, Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-welcome" class="grid grid-cols-1 md:grid-cols-12 flex-grow w-full min-h-inherit">
+            
+            <div class="hidden md:block md:col-span-5 relative bg-stone-900 overflow-hidden select-none">
+                <img src="https://assets.codepen.io/17078699/biancaberg-peas-5462956_1920.jpg" 
+                     alt="Sowing Seeds Vertical Pea Pod Focus" 
+                     class="absolute inset-0 w-full h-full object-cover object-[73%_center] opacity-95 transition-transform duration-1000 scale-102 hover:scale-100">
+                <div class="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-black/10"></div>
+            </div>
+
+            <div class="col-span-12 md:col-span-7 p-5 sm:p-8 md:p-10 flex flex-col justify-between items-start space-y-5 sm:space-y-6 text-left h-full">
+                <div class="space-y-5 w-full">
+                    <div class="flex justify-start">
+                        <span class="text-[10px] sm:text-[11px] font-bold tracking-widest text-emerald-700 uppercase bg-emerald-50 px-3 py-1 rounded-full inline-block">
+                            Cultivating Presence, Acting With Intention
+                        </span>
+                    </div>
+                    
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-serif text-stone-900 font-medium tracking-tight">
+                        Welcome To Sowing Seeds
+                    </h1>
+                    
+                    <div class="text-stone-600 leading-relaxed max-w-xl text-xs sm:text-sm md:text-base space-y-3">
+                        <p>
+                            Today is all about hitting pause on the constant "doing" of your daily routine so you can take a breath and focus on just "being." As a professional, you spend your days pouring your energy into everyone else, completing tasks, and meeting goals. Consider this space a quiet moment to pour some of that energy back into yourself.
+                        </p>
+                        <p>
+                            While goals are about what you want to achieve, intentions are about how you choose to show up in any given moment. They keep you anchored in the values that matter most to you.
+                        </p>
+                    </div>
+
+                    <div class="w-full max-w-xl pt-2">
+                        <button onclick="toggleAccordion()" class="w-full flex items-center justify-between py-2.5 px-4 bg-stone-50 border border-stone-200 rounded-xl hover:bg-stone-100/60 transition duration-150 cursor-pointer text-left text-xs font-semibold text-stone-700 tracking-wide uppercase">
+                            <span>What we will cultivate together</span>
+                            <svg id="accordion-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 transition-transform duration-350 text-stone-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </button>
+                        
+                        <div id="accordion-panel" class="accordion-content bg-stone-50/30 border-x border-b border-stone-200/60 rounded-b-xl px-5">
+                            <div class="py-4 space-y-2 text-xs sm:text-sm text-stone-700 border-t border-stone-200/40">
+                                <span class="font-bold text-emerald-800 uppercase block tracking-wider text-[10px] mb-1">What we will do together:</span>
+                                <div class="grid grid-cols-[auto_1fr] gap-x-2.5 items-start text-stone-600">
+                                    <span class="text-emerald-700 font-semibold select-none">•</span>
+                                    <span>Select a plant whose unique qualities resonate with you.</span>
+                                </div>
+                                <div class="grid grid-cols-[auto_1fr] gap-x-2.5 items-start text-stone-600">
+                                    <span class="text-emerald-700 font-semibold select-none">•</span>
+                                    <span>Create a CLEAR and mindful intention statement that represents how you want to show up.</span>
+                                </div>
+                                <div class="grid grid-cols-[auto_1fr] gap-x-2.5 items-start text-stone-600">
+                                    <span class="text-emerald-700 font-semibold select-none">•</span>
+                                    <span class="leading-normal">Identify potential obstacles to your intention and explore how to overcome them.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full space-y-4 pt-4 border-t border-stone-100 mt-auto">
+                    <div class="w-full max-w-xs">
+                        <input type="text" id="input-name" placeholder="Enter name" class="w-full p-3 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700 focus:outline-none bg-stone-50/30 text-stone-800 placeholder-stone-400 shadow-sm">
+                    </div>
+                    <button onclick="goToWizard()" class="bg-emerald-800 hover:bg-emerald-900 active:scale-[0.98] text-white font-medium text-sm px-10 py-3 rounded-xl shadow-md transition-all duration-150 cursor-pointer w-full sm:w-auto text-center">
+                        Begin
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-wizard" class="hidden fade-in flex-col justify-between flex-grow text-left p-6 sm:p-10 md:p-12 w-full h-full">
+            <div class="w-full bg-stone-200 h-1 rounded-full mb-6 overflow-hidden">
+                <div id="wizard-progress" class="bg-emerald-700 h-full w-1/4 transition-all duration-300"></div>
+            </div>
+
+            <div class="flex-grow flex flex-col justify-center w-full">
+                
+                <div id="step-1" class="wizard-step space-y-4 w-full">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-serif text-stone-900 font-medium"><span class="user-name-span"></span>, select a plant to guide your intention Setting</h2>
+                        <p class="text-xs sm:text-sm text-stone-500 mt-1">Choose a plant whose characteristics you'd like to explore and help guide this experience.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 max-h-[46vh] overflow-y-auto pr-1 custom-scroll w-full">
+                        <div onclick="selectPlant('monstera')" id="card-monstera" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Montsera+%281%29.png" alt="Monstera" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Monstera Deliciosa</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Its split leaves let storms pass through safely without tearing the core. Perfect for heavy workloads.</p>
+                                </div>
+                            </div>
+                            <span id="badge-monstera" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('maranta')" id="card-maranta" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Prayer+Plant+%282%29.png" alt="Prayer Plant" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Prayer Plant (Maranta)</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Closes its leaves at night to protect its inner energy. Reminds us that rest is a necessity.</p>
+                                </div>
+                            </div>
+                            <span id="badge-maranta" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('snake')" id="card-snake" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/snake3.png" alt="Snake Plant" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Snake Plant</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Thrives quietly and cleans the air in low light. Teaches that worth doesn't require constant praise.</p>
+                                </div>
+                            </div>
+                            <span id="badge-snake" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('pothos')" id="card-pothos" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Pothos+Ivy.png" alt="Pothos Ivy" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Pothos Ivy</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Grows fast but drops energy if never pruned. Teaches that trimming away tasks protects core health.</p>
+                                </div>
+                            </div>
+                            <span id="badge-pothos" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('basil')" id="card-basil" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/sweet+basil3.png" alt="Sweet Basil" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Sweet Basil</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">A total sun-seeker that thrives in warmth. Symbolizes protection, domestic harmony, and grace.</p>
+                                </div>
+                            </div>
+                            <span id="badge-basil" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('beans')" id="card-beans" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Bush+Beans+%283%29.png" alt="Bush Beans" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Bush Beans</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Fast growers that anchor community and mutual support by enriching and feeding the soil around them.</p>
+                                </div>
+                            </div>
+                            <span id="badge-beans" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('spinach')" id="card-spinach" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Spinach3.png" alt="Spinach" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Spinach</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Prefers cool spaces and partial shade. Symbolizes enduring knowledge, inner vitality, and endurance.</p>
+                                </div>
+                            </div>
+                            <span id="badge-spinach" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('jalapeno')" id="card-jalapeno" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Jalapeno+%281%29.png" alt="Jalapeno" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Jalapeño Pepper</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Takes patience to germinate, blooming in hot weather. Represents inner fire and deep resilience.</p>
+                                </div>
+                            </div>
+                            <span id="badge-jalapeno" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('zinnias')" id="card-zinnias" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Zinnia2.png" alt="Zinnia" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Zinnias</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Incredibly hardy pollinators that thrive in dry conditions. Symbolizes unrecognized beauty and endurance.</p>
+                                </div>
+                            </div>
+                            <span id="badge-zinnias" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('sunflowers')" id="card-sunflowers" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/dwarf+sunflower.png" alt="Dwarf Sunflower" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Dwarf Sunflowers</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Natural tracking sentinels that follow the sun. Models unwavering loyalty and seeking the light.</p>
+                                </div>
+                            </div>
+                            <span id="badge-sunflowers" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('succulent')" id="card-succulent" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Resilient+Succulent3.png" alt="Resilient Succulent" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Resilient Succulent</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Thrives with minimal intervention and retains water. Ideal for focusing on your inner capacity.</p>
+                                </div>
+                            </div>
+                            <span id="badge-succulent" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+
+                        <div onclick="selectPlant('fern')" id="card-fern" class="plant-card border-2 border-stone-200 rounded-xl p-4 cursor-pointer hover:border-emerald-600 transition-all bg-stone-50/50 flex gap-4 items-center justify-between">
+                            <div class="flex gap-4 items-center">
+                                <img src="https://assets.codepen.io/17078699/Peaceful+Fern+%281%29.png" alt="Peaceful Fern" class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg shrink-0">
+                                <div class="space-y-1">
+                                    <h3 class="font-serif font-medium text-stone-900 text-sm sm:text-base">Peaceful Fern</h3>
+                                    <p class="text-xs sm:text-sm text-stone-500 leading-tight">Loves filtered light and high humidity. Perfect for cultivating stillness and soft, restful spaces.</p>
+                                </div>
+                            </div>
+                            <span id="badge-fern" class="hidden text-emerald-700 text-base font-bold ml-1 select-none">✓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-2" class="wizard-step hidden space-y-4 w-full">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-serif text-stone-900 font-medium">2. Creating Your Intention Statement</h2>
+                        <p class="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">An intention points to how you want to show up, which naturally guides your actions.</p>
+                    </div>
+                    
+                    <div class="border border-stone-200 rounded-xl bg-stone-50 p-4 text-xs sm:text-sm space-y-2.5 shadow-inner">
+                        <div class="grid grid-cols-2 gap-2 font-bold text-stone-400 tracking-wider border-b border-stone-200/60 pb-1 uppercase text-[10px] sm:text-[11px]">
+                            <div>The Goal (Doing)</div>
+                            <div>The Intention (Being)</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-stone-700 leading-tight">
+                            <div class="italic text-stone-500">"Answer client emails."</div>
+                            <div class="font-medium text-emerald-800">"I choose to bring patience to communication."</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-stone-700 leading-tight border-t border-stone-150 pt-2">
+                            <div class="italic text-stone-500">"Finish presentation."</div>
+                            <div class="font-medium text-emerald-800">"I am focused and grounded right now."</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex flex-col space-y-0.5">
+                            <label class="block text-xs sm:text-sm font-semibold uppercase tracking-wider text-stone-700">Write your intention statement:</label>
+                            <span class="text-[11px] italic text-stone-400">It should vibe with your unique personality and values.</span>
+                        </div>
+                        <textarea id="input-intention" rows="2" placeholder="Type your custom intention here, or browse the options below..." class="w-full p-3 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-700 focus:outline-none bg-stone-50/30 text-stone-800 placeholder-stone-400 resize-none"></textarea>
+                    </div>
+
+                    <div class="space-y-2">
+                        <span class="block text-[10px] font-bold text-stone-400 uppercase tracking-wider">Intention Bank:</span>
+                        
+                        <div class="flex flex-wrap gap-1.5 text-[11px] font-medium border-b border-stone-150 pb-2">
+                            <button type="button" onclick="switchBankTab('bank-ground')" id="tab-bank-ground" class="bank-tab-btn py-1 px-2.5 rounded-md text-emerald-800 font-semibold bg-emerald-50/60 border border-emerald-200/40 cursor-pointer transition">Daily Focus & Grounding</button>
+                            <button type="button" onclick="switchBankTab('bank-career')" id="tab-bank-career" class="bank-tab-btn py-1 px-2.5 rounded-md text-stone-500 bg-stone-50 border border-stone-200/40 hover:bg-stone-100 cursor-pointer transition">Work & Career</button>
+                            <button type="button" onclick="switchBankTab('bank-relationship')" id="tab-bank-relationship" class="bank-tab-btn py-1 px-2.5 rounded-md text-stone-500 bg-stone-50 border border-stone-200/40 hover:bg-stone-100 cursor-pointer transition">Relationship & Wellbeing</button>
+                            <button type="button" onclick="switchBankTab('bank-growth')" id="tab-bank-growth" class="bank-tab-btn py-1 px-2.5 rounded-md text-stone-500 bg-stone-50 border border-stone-200/40 hover:bg-stone-100 cursor-pointer transition">Personal Growth</button>
+                        </div>
+
+                        <div class="bg-stone-50 border border-stone-200 rounded-xl p-1.5 max-h-[120px] overflow-y-auto custom-scroll text-left">
+                            <div id="bank-ground" class="bank-tab-content grid grid-cols-1 gap-1 text-xs sm:text-sm text-stone-700">
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to take things one breath at a time, letting go of rushing."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to meet whatever this day brings with a steady mind and a calm heart."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose boundaries that protect my internal peace."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"If I get off track today, I choose to simply pause, reset, and begin again."</span>
+                            </div>
+                            
+                            <div id="bank-career" class="bank-tab-content hidden grid grid-cols-1 gap-1 text-xs sm:text-sm text-stone-700">
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I am letting my 'being' be the fuel for my 'doing' by pausing before responding."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to lead with empathy, clarity, and focus."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to protect my creative energy today by setting gentle, honest boundaries."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"My success is defined by the level of peace I experience as I live out my values."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to regroup and realign when my results don't reflect my values."</span>
+                            </div>
+                            
+                            <div id="bank-relationship" class="bank-tab-content hidden grid grid-cols-1 gap-1 text-xs sm:text-sm text-stone-700">
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to bring full presence and deep listening to the people I connect with today."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to extend grace to myself and others."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I am protecting my unique light by filtering out negative vibes and staying centered."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"Setting boundaries is my superpower."</span>
+                            </div>
+
+                            <div id="bank-growth" class="bank-tab-content hidden grid grid-cols-1 gap-1 text-xs sm:text-sm text-stone-700">
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I am giving myself permission to bloom at my own pace. Slow growth is still growth."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to be rooted and grounded."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to rest as a form of growth."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to keep my soul steady when things are heavy."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I am honoring my capacity today, knowing that resting is a necessary part of becoming."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to embrace the lesson provided by each mistake or misunderstanding."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I choose to keep my eyes on the sunrise, leaving behind all the failed tries."</span>
+                                <span onclick="useAffirmation(this)" class="p-2 bg-white hover:bg-emerald-50 rounded border border-stone-200/60 cursor-pointer transition shadow-sm">"I embrace both the sunrises and sunsets as both provide an opportunity for reflection and resetting."</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="step-2b" class="wizard-step hidden space-y-4 w-full">
+                    <div class="space-y-1">
+                        <h2 class="text-xl sm:text-2xl font-serif text-stone-900 font-medium">Align Your Intention</h2>
+                        <p class="text-xs sm:text-sm text-stone-500 leading-relaxed">Let's review your intention statement using the CLEAR Framework and decide if you want to refine your statement or continue forward.</p>
+                    </div>
+
+                    <div class="bg-stone-50 border border-stone-200 p-5 rounded-xl space-y-4 min-h-[170px] flex flex-col justify-between relative overflow-hidden shadow-inner w-full">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between border-b border-stone-200/60 pb-1.5">
+                                <span id="clear-letter-header" class="text-xs font-bold tracking-widest text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase"></span>
+                                <span class="text-[11px] font-semibold text-stone-400 uppercase tracking-wider">Reflection (<span id="clear-step-counter">1</span>/5)</span>
+                            </div>
+                            <p id="clear-reflection-query" class="text-sm sm:text-base text-stone-700 leading-relaxed font-serif italic py-1"></p>
+                        </div>
+
+                        <div class="bg-white border border-stone-200/40 p-3 rounded-lg text-left text-xs sm:text-sm text-stone-500 truncate font-sans">
+                            Current Intention: <span class="text-emerald-800 italic font-medium font-serif">" <span id="clear-intention-readout"></span> "</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-1 text-left">
+                        <button type="button" onclick="loopBackToEditIntention()" class="text-xs font-bold uppercase tracking-wider text-stone-400 hover:text-stone-700 transition inline-flex items-center gap-1 cursor-pointer">
+                            &larr; Refine Statement
+                        </button>
+                    </div>
+                </div>
+
+                <div id="step-3" class="wizard-step hidden space-y-4 w-full">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-serif text-stone-900 font-medium">3. Overcoming Barriers and Distractions</h2>
+                        <p class="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">What barriers or distractions might try to pull you away from your intention today?</p>
+                    </div>
+                    
+                    <div class="space-y-3 pt-1 w-full">
+                        <div class="space-y-2.5 w-full">
+                            <label class="block text-xs sm:text-sm font-semibold text-stone-700 uppercase tracking-wide">Friction Points or Distractions to Anticipate:</label>
+                            <input type="text" id="barrier-1" placeholder="Obstacle #1 (Required)" class="w-full p-3 border border-stone-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-stone-50/30">
+                            <input type="text" id="barrier-2" placeholder="Obstacle #2 (Optional)" class="w-full p-3 border border-stone-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-stone-50/30">
+                            <input type="text" id="barrier-3" placeholder="Obstacle #3 (Optional)" class="w-full p-3 border border-stone-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-stone-50/30">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="wizard-global-footer" class="flex items-center justify-between pt-4 border-t border-stone-100 mt-4 w-full p-6 sm:p-10 md:p-12">
+                <button id="btn-back" onclick="wizardBack()" class="text-xs font-bold tracking-wide uppercase text-stone-400 hover:text-stone-700 cursor-pointer">Back</button>
+                <button id="btn-next" onclick="wizardNext()" class="bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold uppercase tracking-wide px-6 py-2.5 rounded-xl shadow transition cursor-pointer">Continue</button>
+            </div>
+        </div>
+
+        <div id="screen-dissolve" class="hidden fade-in space-y-5 py-4 flex-grow flex flex-col justify-center items-start text-left p-6 sm:p-10 md:p-12 w-full h-full">
+            <div class="space-y-3 w-full">
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-serif text-stone-900 font-medium">Overcoming Obstacles</h2>
+                <div class="text-xs sm:text-sm text-stone-600 space-y-2 leading-relaxed">
+                    <p>Acknowledging our obstacles is the first step to overcoming them. As you mist these barriers away, know that showing up in ways aligned with your values gives you an anchor to reset and regain focus.</p>
+                </div>
+            </div>
+
+            <div id="paper-slip" class="paper-slip w-full max-w-sm min-h-[160px] bg-gradient-to-br from-[#fcfaf2] via-[#f7f4eb] to-[#f3efe0] border border-[#eadeca] shadow-md rounded-lg flex flex-col items-center justify-center p-6 text-center relative overflow-hidden mx-auto transition-all duration-300">
+                <div id="barrier-target-container" class="space-y-3 w-full transition-all duration-700 opacity-100 font-serif italic text-stone-800 tracking-wide text-sm sm:text-base"></div>
+                
+                <div id="intention-reveal-container" class="absolute inset-0 flex flex-col items-center justify-center p-5 text-center opacity-0 pointer-events-none transition-all duration-1000 mx-auto w-full">
+                    <span class="text-[9px] font-bold tracking-widest text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded-full mb-2 inline-block mx-auto">My Anchor Intention</span>
+                    <p id="revealed-intention-text" class="font-serif font-medium italic text-stone-900 text-sm sm:text-base leading-relaxed px-2"></p>
+                </div>
+            </div>
+
+            <div class="w-full max-w-xs mx-auto pt-2">
+                <button onclick="mistPaper()" class="w-full bg-cyan-800 hover:bg-cyan-900 active:scale-98 text-white font-semibold text-xs tracking-wide uppercase px-6 py-3.5 rounded-full shadow-md flex items-center justify-center gap-2 mx-auto cursor-pointer transition-all group">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 group-hover:animate-bounce">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v14.25m0 0l3-3m-3 3l-3-3M12 21h.008v.008H12V21z" />
+                    </svg>
+                    <span>Tap to Mist (<span id="mist-count">0</span>/3)</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-sanctuary" class="hidden fade-in space-y-5 flex-grow flex flex-col justify-between text-left p-6 sm:p-10 md:p-12 w-full h-full">
+            <div class="space-y-0.5">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-serif text-stone-900 font-medium"><span class="user-name-span"></span>'s Sowing Seeds Reflection Dashboard</h1>
+                <p class="text-xs sm:text-sm text-stone-500">Wisdom and Final Reflection</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center flex-grow py-2 overflow-hidden w-full">
+                <div class="md:col-span-5 flex justify-center bg-stone-50 border border-stone-200/60 rounded-2xl p-4 max-h-[290px] md:max-h-[360px] aspect-[4/5] mx-auto w-full shadow-inner relative overflow-hidden flex flex-col justify-between items-center">
+                    <div class="w-full flex-grow flex items-end justify-center pb-2 overflow-hidden max-h-[62%]">
+                        <img id="sanctuary-plant-display" src="" alt="Your Selected Plant" class="max-w-[95%] max-h-[95%] object-contain drop-shadow-md">
+                    </div>
+
+                    <div id="sanctuary-planter-pot" class="w-full bg-white border border-stone-200 rounded-b-xl rounded-t shadow-sm min-h-[95px] max-h-[120px] p-2.5 flex flex-col items-center justify-center text-center relative z-20 transition-all duration-300">
+                        <h4 id="pot-display-name" class="font-serif font-bold text-stone-800 text-[11px] tracking-wider uppercase border-b border-stone-100 pb-1 mb-1 w-full truncate"></h4>
+                        <p id="pot-display-affirmation" class="font-sans font-semibold italic text-emerald-800 leading-tight px-1 overflow-y-auto custom-scroll max-h-[56px] w-full text-base"></p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-7 space-y-4 max-h-[40vh] md:max-h-none overflow-y-auto pr-1 custom-scroll">
+                    <div class="bg-stone-50 border border-stone-200 p-5 rounded-xl space-y-4">
+                        <div class="border-b border-stone-200/60 pb-3">
+                            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-800 uppercase tracking-wide block mb-1">🌱 Plant Variety Wisdom</span>
+                            <p id="dash-plant-info" class="text-xs sm:text-sm text-stone-700 leading-relaxed"></p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-800 uppercase tracking-wide block mb-1">💧 Daily Care Instruction</span>
+                            <p id="dash-plant-care" class="text-xs sm:text-sm text-stone-600 leading-relaxed italic"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-stone-100 flex flex-col sm:flex-row gap-3 justify-between items-center mt-2 w-full">
+                <div class="flex flex-wrap gap-4 order-2 sm:order-1 items-center justify-start w-full sm:w-auto">
+                    <button onclick="openResetModal()" class="text-xs sm:text-sm font-medium text-stone-400 hover:text-red-600 transition-colors cursor-pointer">
+                        Start Over
+                    </button>
+                    <button onclick="jumpBackToPlantSelection()" class="text-xs sm:text-sm font-medium text-stone-400 hover:text-emerald-700 transition-colors cursor-pointer">
+                        Select Another Plant
+                    </button>
+                    <button onclick="openSaveCardOverlay()" class="text-xs sm:text-sm font-medium text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        <span>Download My Intention Card</span>
+                    </button>
+                </div>
+                <button onclick="shareSanctuary()" class="w-full sm:w-auto bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold tracking-wide uppercase px-5 py-2.5 rounded-xl transition-all inline-flex items-center justify-center gap-1.5 order-1 sm:order-2 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186l5.574-3.252m-5.574 3.252l5.574 3.252m0 0a2.25 2.25 0 102.186 1.956 2.25 2.25 0 00-2.186-1.956zm0-6.504a2.25 2.25 0 102.186-1.956z" />
+                    </svg>
+                    <span>Share My Plant</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedPlantType = "";
+        let mistClicks = 0;
+        let userName = "Friend";
+        let clearFilterSubStep = 0;
+
+        const appState = {
+            name: "",
+            plant: "",
+            intention: "",
+            barriers: []
+        };
+
+        const clearFrameworkData = [
+            { letter: "C – Choice-Based", query: "Does this statement give you a conscious choice in how you respond when friction happens today?" },
+            { letter: "L – Liberatory Leaning-In", query: "Does it encourage you to lean into the present moment, rather than avoiding or resisting challenges?" },
+            { letter: "E – Empowering", query: "Does it empower your internal peace and power from the inside out, making you resilient to external chaos?" },
+            { letter: "A – Authentic & Alignable", query: "Does it honor your true self and current capacity, remaining flexible enough to guide you on your hardest days?" },
+            { letter: "R – Relationship-Centered", query: "Does it support your relationship to yourself, deepen your empathy, and elevate how you show up for others?" }
+        ];
+
+        const plantImgRegistry = {
+            monstera: "https://assets.codepen.io/17078699/Montsera+%281%29.png",
+            maranta: "https://assets.codepen.io/17078699/Prayer+Plant+%282%29.png",
+            snake: "https://assets.codepen.io/17078699/snake3.png",
+            pothos: "https://assets.codepen.io/17078699/Pothos+Ivy.png",
+            basil: "https://assets.codepen.io/17078699/sweet+basil3.png",
+            beans: "https://assets.codepen.io/17078699/Bush+Beans+%283%29.png",
+            spinach: "https://assets.codepen.io/17078699/Spinach3.png",
+            jalapeno: "https://assets.codepen.io/17078699/Jalapeno+%281%29.png",
+            zinnias: "https://assets.codepen.io/17078699/Zinnia2.png",
+            sunflowers: "https://assets.codepen.io/17078699/dwarf+sunflower.png",
+            succulent: "https://assets.codepen.io/17078699/Resilient+Succulent3.png",
+            fern: "https://assets.codepen.io/17078699/Peaceful+Fern+%281%29.png"
+        };
+
+        const lifeMetaphors = {
+            monstera: {
+                info: "The Monstera develops natural leaf gaps so that wild, unexpected storms and high-pressure seasons can blow clean through them without tearing down the entire branch.",
+                care: "Watering (Nurturing): Don't just set your intention and forget it. Give it life throughout the day by taking three deep breaths whenever you feel your schedule getting crowded."
+            },
+            maranta: {
+                info: "The Prayer Plant naturally closes its leaf canopy inward as darkness falls, protecting its soft interior core from structural exposure until daylight breaks.",
+                care: "Sunlight (Focus): Place your attention on how you want to feel, rather than focusing solely on the chaotic list of 'doing' tasks stacked around your environment."
+            },
+            snake: {
+                info: "The Snake Plant functions with independent structural resilience, thriving perfectly with minimal maintenance and purifying air toxicity inside dark rooms.",
+                care: "Weathering the Storm: When those obstacles you misted away try to creep back into your workspace, remember your roots. You are built to handle the weather."
+            },
+            pothos: {
+                info: "The Pothos Ivy expands rapidly in every direction, but if it is left unchecked without pruning, its vines grow dangerously tangled and depleted.",
+                care: "Pruning (Boundaries): Trimming away additional obligations isn't quitting—it is a mandatory lifestyle cleanup to save your core energy."
+            },
+            basil: {
+                info: "Sweet Basil is a dedicated sun-seeker that demands placement on your warmest, brightest windowsills to unleash its full potential.",
+                care: "Sunlight (Focus): Aggressively prioritize environments and mindsets that feed your warmth and light rather than settling for cold, dim settings."
+            },
+            beans: {
+                info: "Bush Beans are fast, sturdy growers that require no external trellises to prop up their weight, feeding entities growing alongside them.",
+                care: "Community Care: Stay anchored in mutual support networks. By protecting your own state of being, you naturally enrich the environment around you."
+            },
+            spinach: {
+                info: "Spinach is the ultimate cool-season crop, actively preferring partial shade and turning bitter if subjected to direct, harsh midday heat.",
+                care: "Temperature Control: Seek calm, tempered intervals today. Step away from intense environmental noise to sustain your long-term output endurance."
+            },
+            jalapeno: {
+                info: "The Jalapeño Pepper demands immense patience, taking up to two full weeks just to emerge from the dirt before moving to hot outdoor elements to yield fruit.",
+                care: "Patience (Growth): Slow-burning personal growth takes time. Honor the friction and the process today, knowing your resilience is building underneath."
+            },
+            zinnias: {
+                info: "Zinnias are exceptionally hardy, bright pollinators that survive beautifully through harsh, dry spells and high atmospheric heat.",
+                care: "Endurance (Resilience): Stand tall even when conditions feel demanding. You are built to bloom vibrantly without requiring perfect elements."
+            },
+            sunflowers: {
+                info: "Dwarf Sunflowers function as natural tracking sentinels, physically shifting their alignment to face the sun throughout the day.",
+                care: "Pivoting Perspective: Consciously track the light. When a barrier enters your focus, deliberately turn your mind back to your core anchor statement."
+            },
+            succulent: {
+                info: "The Resilient Succulent specializes in holding its inner resources dense and safe, drawing strictly upon internal reserves when elements dry out.",
+                care: "Resource Allocation: You are completely entitled to safeguard your energy capacity, thriving peacefully even when resources drop below normal."
+            },
+            fern: {
+                info: "The Peaceful Fern thrives elegantly in softly filtered shadows, growing rich wild patterns by drawing selectively from soft, damp environments.",
+                care: "Quiet Sanctuaries: Your evolution doesn't demand blistering, constant spotlight attention. Give yourself permission to flourish in quiet spaces."
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHistoryBadges();
+            const cached = localStorage.getItem('sowingSeedsAppState');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                userName = parsed.name || "Friend";
+                updateDisplayedName(userName);
+                renderDashboard(parsed);
+            }
+        });
+
+        function toggleAccordion() {
+            const panel = document.getElementById('accordion-panel');
+            const arrow = document.getElementById('accordion-arrow');
+            panel.classList.toggle('accordion-open');
+            arrow.style.transform = panel.classList.contains('accordion-open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function renderHistoryBadges() {
+            let history = localStorage.getItem('sowingSeedsGardenHistory');
+            let completedPlants = history ? JSON.parse(history) : [];
+            Object.keys(plantImgRegistry).forEach(type => {
+                let badge = document.getElementById(`badge-${type}`);
+                if (badge) {
+                    badge.classList.toggle('hidden', !completedPlants.includes(type));
+                }
+            });
+        }
+
+        function triggerSystemAlert(messageString) {
+            document.getElementById('system-alert-text').innerText = messageString;
+            document.getElementById('system-alert-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeSystemAlert() {
+            document.getElementById('system-alert-modal').classList.replace('flex', 'hidden');
+        }
+
+        function updateDisplayedName(name) {
+            const isolatedFirstName = name.trim().split(' ')[0] || "Friend";
+            document.querySelectorAll('.user-name-span').forEach(el => el.textContent = isolatedFirstName);
+        }
+
+        function switchBankTab(tabId) {
+            document.querySelectorAll('.bank-tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.bank-tab-btn').forEach(btn => {
+                btn.classList.remove('text-emerald-800', 'font-semibold', 'bg-emerald-50/60', 'border-emerald-200/40');
+                btn.classList.add('text-stone-500', 'bg-stone-50', 'border-stone-200/40');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            const currentTabBtn = document.getElementById('tab-' + tabId);
+            currentTabBtn.classList.remove('text-stone-500', 'bg-stone-50', 'border-stone-200/40');
+            currentTabBtn.classList.add('text-emerald-800', 'font-semibold', 'bg-emerald-50/60', 'border-emerald-200/40');
+        }
+
+        function useAffirmation(element) {
+            document.getElementById('input-intention').value = element.innerText.replace(/"/g, "").trim();
+        }
+
+        function goToWizard() {
+            const nameInput = document.getElementById('input-name').value.trim();
+            if (nameInput) { userName = nameInput; appState.name = userName; }
+            updateDisplayedName(userName);
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-wizard').classList.replace('hidden', 'flex');
+            updateWizardUI();
+        }
+
+        function selectPlant(type) {
+            selectedPlantType = type;
+            appState.plant = type;
+            applyPlantSelectionHighlight();
+        }
+
+        function applyPlantSelectionHighlight() {
+            document.querySelectorAll('.plant-card').forEach(card => {
+                card.classList.remove('ring-2', 'ring-emerald-600', 'bg-emerald-50/40');
+            });
+            if (selectedPlantType) {
+                const selectedCard = document.getElementById(`card-${selectedPlantType}`);
+                if (selectedCard) {
+                    selectedCard.classList.add('ring-2', 'ring-emerald-600', 'bg-emerald-50/40');
+                }
+            }
+        }
+
+        function updateWizardUI() {
+            const stepIdMap = ["step-1", "step-2", "step-2b", "step-3"];
+            document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('hidden'));
+            document.getElementById(stepIdMap[currentStep - 1]).classList.remove('hidden');
+            document.getElementById('wizard-progress').style.width = `${(currentStep / 4) * 100}%`;
+            
+            if (currentStep === 1) {
+                applyPlantSelectionHighlight();
+            }
+
+            const globalNextBtn = document.getElementById('btn-next');
+            if (currentStep === 3) {
+                globalNextBtn.textContent = (clearFilterSubStep === 4) ? "Complete & Proceed" : "Affirm & Continue";
+            } else {
+                globalNextBtn.textContent = "Continue";
+            }
+        }
+
+        function wizardNext() {
+            if (currentStep === 1) {
+                if (!selectedPlantType) { triggerSystemAlert("Please select a plant variety to proceed forward."); return; }
+                currentStep = 2;
+                updateWizardUI();
+                return;
+            }
+            if (currentStep === 2) {
+                const textVal = document.getElementById('input-intention').value.trim();
+                if (!textVal) { triggerSystemAlert("Please select or enter an intention statement."); return; }
+                appState.intention = textVal;
+                
+                clearFilterSubStep = 0;
+                document.getElementById('clear-intention-readout').textContent = appState.intention;
+                renderClearFilterSubStepUI();
+                
+                currentStep = 3; 
+                updateWizardUI();
+                return;
+            }
+            if (currentStep === 3) { 
+                if (clearFilterSubStep < 4) {
+                    clearFilterSubStep++;
+                    renderClearFilterSubStepUI();
+                } else {
+                    currentStep = 4; 
+                    updateWizardUI();
+                }
+                return;
+            }
+            if (currentStep === 4) {
+                appState.barriers = [];
+                const b1 = document.getElementById('barrier-1').value.trim();
+                const b2 = document.getElementById('barrier-2').value.trim();
+                const b3 = document.getElementById('barrier-3').value.trim();
+                
+                if (b1) appState.barriers.push(b1);
+                if (b2) appState.barriers.push(b2);
+                if (b3) appState.barriers.push(b3);
+                
+                if (appState.barriers.length === 0) { 
+                    triggerSystemAlert("Please identify at least one obstacle barrier."); 
+                    return; 
+                }
+                startDissolveScreen();
+            }
+        }
+
+        function wizardBack() {
+            if (currentStep === 2) { currentStep = 1; updateWizardUI(); return; }
+            if (currentStep === 3) { 
+                if (clearFilterSubStep > 0) {
+                    clearFilterSubStep--;
+                    renderClearFilterSubStepUI();
+                } else {
+                    currentStep = 2; 
+                    updateWizardUI(); 
+                }
+                return; 
+            }
+            if (currentStep === 4) { currentStep = 3; updateWizardUI(); return; }
+            if (currentStep === 1) {
+                document.getElementById('screen-wizard').classList.replace('flex', 'hidden');
+                document.getElementById('screen-welcome').classList.remove('hidden');
+            }
+        }
+
+        function renderClearFilterSubStepUI() {
+            const data = clearFrameworkData[clearFilterSubStep];
+            document.getElementById('clear-letter-header').textContent = data.letter;
+            document.getElementById('clear-reflection-query').textContent = data.query;
+            document.getElementById('clear-step-counter').textContent = clearFilterSubStep + 1;
+            
+            const globalNextBtn = document.getElementById('btn-next');
+            if (globalNextBtn) {
+                globalNextBtn.textContent = (clearFilterSubStep === 4) ? "Complete & Proceed" : "Affirm & Continue";
+            }
+        }
+
+        function loopBackToEditIntention() {
+            currentStep = 2;
+            updateWizardUI();
+        }
+
+        function startDissolveScreen() {
+            document.getElementById('screen-wizard').classList.add('hidden');
+            document.getElementById('screen-dissolve').classList.replace('hidden', 'flex');
+            mistClicks = 0;
+            document.getElementById('mist-count').innerText = "0";
+            
+            const paperSlip = document.getElementById('paper-slip');
+            if (paperSlip) {
+                paperSlip.classList.remove('mist-blur-fade');
+            }
+            
+            const targetObstacles = document.getElementById('barrier-target-container');
+            const targetIntention = document.getElementById('intention-reveal-container');
+            
+            targetObstacles.style.opacity = "1";
+            targetObstacles.style.filter = "none";
+            targetIntention.style.opacity = "0";
+            targetIntention.style.transform = "scale(0.95)";
+            
+            targetObstacles.innerHTML = "";
+            appState.barriers.forEach(b => {
+                targetObstacles.innerHTML += `<div class="barrier-line py-1 border-b border-[#ebdcb9]/40 tracking-wide leading-relaxed truncate px-4">"${b}"</div>`;
+            });
+        }
+
+        function mistPaper() {
+            if (mistClicks >= 3) return;
+            mistClicks++;
+            document.getElementById('mist-count').innerText = mistClicks;
+
+            const lines = document.querySelectorAll('.barrier-line');
+            lines.forEach(line => {
+                line.style.opacity = (1 - (mistClicks * 0.34));
+                line.style.filter = `blur(${mistClicks * 2.8}px)`;
+            });
+
+            if (mistClicks >= 3) {
+                document.getElementById('revealed-intention-text').innerText = `"${appState.intention}"`;
+                document.getElementById('barrier-target-container').style.opacity = "0";
+                
+                setTimeout(() => {
+                    const targetIntention = document.getElementById('intention-reveal-container');
+                    targetIntention.style.opacity = "1";
+                    targetIntention.style.transform = "scale(1)";
+                    
+                    setTimeout(() => {
+                        let history = localStorage.getItem('sowingSeedsGardenHistory');
+                        let completedPlants = history ? JSON.parse(history) : [];
+                        if (!completedPlants.includes(appState.plant)) {
+                            completedPlants.push(appState.plant);
+                            localStorage.setItem('sowingSeedsGardenHistory', JSON.stringify(completedPlants));
+                        }
+                        localStorage.setItem('sowingSeedsAppState', JSON.stringify(appState));
+                        renderDashboard(appState);
+                    }, 3200);
+                }, 400);
+            }
+        }
+
+        function scaleFluidPotTypography(textString) {
+            const potTextBox = document.getElementById('pot-display-affirmation');
+            const savePotTextBox = document.getElementById('save-card-pot-affirmation');
+            potTextBox.innerText = textString;
+            savePotTextBox.innerText = textString;
+            
+            let optimalSize = 16.5; 
+            potTextBox.style.fontSize = `${optimalSize}px`;
+            while ((potTextBox.scrollHeight > 56 || textString.length > 34) && optimalSize > 12.5) {
+                optimalSize -= 0.5;
+                potTextBox.style.fontSize = `${optimalSize}px`;
+            }
+            savePotTextBox.style.fontSize = potTextBox.style.fontSize;
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-wizard').classList.add('hidden');
+            document.getElementById('screen-dissolve').classList.add('hidden');
+            document.getElementById('screen-sanctuary').classList.remove('hidden');
+            
+            const plantMeta = lifeMetaphors[data.plant] || { info: "", care: "" };
+            document.getElementById('dash-plant-info').innerText = plantMeta.info;
+            document.getElementById('dash-plant-care').innerText = plantMeta.care;
+
+            const targetImgSrc = plantImgRegistry[data.plant] || "";
+            document.getElementById('sanctuary-plant-display').src = targetImgSrc;
+            document.getElementById('save-card-plant-display').src = targetImgSrc;
+
+            const rawName = data.name || userName || "Friend";
+            const cleanFirstName = rawName.trim().split(' ')[0];
+            const potTitleText = `${cleanFirstName.toUpperCase()}'S INTENTION`;
+            
+            document.getElementById('pot-display-name').textContent = potTitleText;
+            document.getElementById('save-card-pot-name').textContent = potTitleText;
+            scaleFluidPotTypography(data.intention);
+        }
+
+        function jumpBackToPlantSelection() {
+            currentStep = 1;
+            selectedPlantType = appState.plant || "";
+            document.getElementById('screen-sanctuary').classList.add('hidden');
+            document.getElementById('screen-wizard').classList.replace('hidden', 'flex');
+            updateWizardUI();
+        }
+
+        function openSaveCardOverlay() { document.getElementById('save-card-overlay').classList.replace('hidden', 'flex'); }
+        function closeSaveCardOverlay() { document.getElementById('save-card-overlay').classList.replace('flex', 'hidden'); }
+        
+        function openResetModal() { 
+            document.getElementById('reset-modal').classList.replace('hidden', 'flex'); 
+        }
+        function closeResetModal() { 
+            document.getElementById('reset-modal').classList.replace('flex', 'hidden'); 
+        }
+
+        function confirmResetApp() {
+            localStorage.removeItem('sowingSeedsAppState');
+            currentStep = 1;
+            selectedPlantType = "";
+            mistClicks = 0;
+            
+            document.getElementById('input-name').value = "";
+            document.getElementById('input-intention').value = "";
+            document.getElementById('barrier-1').value = "";
+            document.getElementById('barrier-2').value = "";
+            document.getElementById('barrier-3').value = "";
+            if (document.getElementById('paper-slip')) {
+                document.getElementById('paper-slip').classList.remove('mist-blur-fade');
+            }
+            
+            closeResetModal();
+            renderHistoryBadges();
+            document.getElementById('screen-sanctuary').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+            updateDisplayedName("Friend");
+            document.querySelectorAll('.plant-card').forEach(card => card.classList.remove('border-emerald-600', 'bg-emerald-50/40', 'ring-2', 'ring-emerald-600'));
+        }
+
+        function shareSanctuary() {
+            const text = `Sowing Seeds Intention Statement: "${appState.intention}"`;
+            if (navigator.share) {
+                navigator.share({ title: 'My Sowing Seeds Intention', text: text, url: window.location.href }).catch(err => console.log(err));
+            } else {
+                navigator.clipboard.writeText(text);
+                triggerSystemAlert("Your intention has been copied to your clipboard!");
+            }
+        }
+    </script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
